@@ -4,6 +4,8 @@ This repository contains an example solution on how to scale a fleet of game ser
 
 Check out the [Amazon GameLift FleetIQ documentation](https://docs.aws.amazon.com/gamelift/latest/fleetiqguide/gsg-intro.html) for more details on the service.
 
+**NOTE:** This repository exists for **example purposes only** and you always need to build and validate your own solution for production use. Deploying the solution **will generate costs** beyond the AWS Free Tier.
+
 # Key Features
 * GameLift FleetIQ used to provision a Game Server Group. EC2 instances in the group will register to an ECS Cluster as workers
 * Game Server Tasks deployed to the ECS Cluster by a serverless scaler service to always keep all instances fully utilized
