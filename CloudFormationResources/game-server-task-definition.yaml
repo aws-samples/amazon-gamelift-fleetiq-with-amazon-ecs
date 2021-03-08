@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: A stack for deploying the task definition to be used by the scaler to start game servers
+
+Parameters:
+  ECSResourcesStackName: 
+      Type: String
+      Default: "fleetiq-ecs-vpc-and-ecs-resources"
+      Description: Name of the stack for the ECS resources to import
+  Image: 
+    Type: String
+    Description: The url of the image to be used in the Task definition
+
+Resources:
+  GameServerLogGroup: 
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      RetentionInDays: 7
+      LogGroupName: "fleetiq-game-servers"
+
+  GameServerTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ecs-tasks.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: / 
+      Policies:
+        - PolicyName: AmazonGameServerECSTaskRolePolicy
+          PolicyDocument:
+            Statement:
+            - Effect: Allow
+              Action:
+                # Allow Lambda invocation to access backend Lambda services
+                - 'lambda:InvokeFunction'
+                # Allow full GameLift access for FleetIQ APIs
+                - 'gamelift:*'
+              Resource: '*'
+
+  GameServerTaskDefinition: 
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+        - "EC2"
+      NetworkMode: bridge
+      Cpu: 512
+      Memory: 953
+      TaskRoleArn: !Ref GameServerTaskRole
+      ExecutionRoleArn:
+        Fn::ImportValue:
+          !Sub "${ECSResourcesStackName}:ECSTaskExecutionRole"
+      # 1 game server per Task
+      ContainerDefinitions: 
+        - 
+          Name: "GameServer1"
+          Image: !Ref Image
+          Environment:
+          - Name: PORT
+            Value: 1935
+          - Name: CONTAINERNAME
+            Value: "container1"
+          Cpu: 512
+          PortMappings: 
+            - 
+              ContainerPort: 1935
+              HostPort: 0
+          Memory: 953
+          Essential: true
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              "awslogs-group": "fleetiq-game-servers"
+              "awslogs-region": !Ref AWS::Region
+              "awslogs-stream-prefix": "ecs"                                                                                                            
+
+Outputs:
+  TaskDefinition:
+    Description: The task definition resource
+    Value: !Ref GameServerTaskDefinition
+    Export:
+      Name: !Join [ ':', [ !Ref 'AWS::StackName', 'TaskDefinition' ] ]

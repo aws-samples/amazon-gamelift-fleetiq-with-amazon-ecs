@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM App for starting ECS game server Tasks on a schedule when needed and a backend API to request game sessions
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 300
+
+Parameters:
+  ECSResourcesStackName: 
+      Type: String
+      Default: "fleetiq-ecs-vpc-and-ecs-resources"
+      Description: Name of the stack for the ECS resources to import
+  TaskResourcesStackName: 
+      Type: String
+      Default: "fleetiq-game-servers-task-definition"
+      Description: Name of the stack for the Task resources to import
+
+
+Resources:
+
+  # Log group and retention for scaling function
+  ScalingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: [ ScalingFunction ]
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ScalingFunction}
+      RetentionInDays: 30
+  
+  # Queue for available active sessions for the backend
+  MatchMakingTicketsQueue: 
+    Type: AWS::SQS::Queue
+    Properties: 
+      ReceiveMessageWaitTimeSeconds: 1 #Wait 1 second for messaged to arrive by default
+
+  # API for Frontend functionality
+  FrontEndAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      # Authenticate users with IAM (Cognito identities)
+      Auth:
+        DefaultAuthorizer: AWS_IAM
+        InvokeRole: NONE #Using the Lambda role instead of caller
+
+  # Scheduled Lambda function to start new game server ECS Tasks whenever there's capacity available
+  ScalingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/
+      Handler: scaler.lambda_handler
+      Runtime: python3.7
+      MemorySize: 1024
+      ReservedConcurrentExecutions: 1 # We always want exactly one copy of this function running at maximum
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 60 # Don't keep events in queue for long.
+        MaximumRetryAttempts: 1 # Sometimes the execution of the previous function can overlap so one retry makes sense
+      # Environment variables from other stacks to access the resources
+      Environment:
+        Variables:
+          ECS_CLUSTER_NAME: 
+            Fn::ImportValue:
+                  !Sub "${ECSResourcesStackName}:ClusterName"
+      Policies:
+        - AWSCloudFormationReadOnlyAccess
+        - AmazonECS_FullAccess
+        - CloudWatchReadOnlyAccess
+      Events:
+        CheckScalingNeeds:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 minute)
+
+  # Function called by clients through the API to request a game session
+  RequestGameSession:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: functions/
+      Handler: requestgamesession.lambda_handler
+      Runtime: python3.7
+      MemorySize: 1024
+      Timeout: 15
+      Policies:
+        - AmazonSQSFullAccess
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: 'gamelift:*'
+              Resource: '*'
+      # Environment variables from other stacks to access the resources
+      Environment:
+        Variables:
+          SQS_QUEUE_URL: !Ref MatchMakingTicketsQueue
+      Events:
+        GetGameSession:
+          Type: Api
+          Properties:
+            RestApiId: !Ref FrontEndAPI
+            Path: /requestgamesession
+            Method: get
+
+Outputs:
+  ScalingFunction:
+    Description: "Scaling Lambda Function ARN"
+    Value: !GetAtt ScalingFunction.Arn
+  ScalingFunctionIamRole:
+    Description: "Implicit IAM Role created for Scaling function"
+    Value: !GetAtt ScalingFunction.Arn
+  FrontEndAPI:
+    Description: "API Gateway endpoint URL for Prod stage for FrontEndAPI"
+    Value: !Sub "https://${FrontEndAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  FrontEndApiArn:
+    Description: "The Execute ARN for the Cognito Role Permissions"
+    Value: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${FrontEndAPI}/*/*/*"
+    Export:
+      Name: !Sub ${AWS::StackName}:FrontEndApiArn
