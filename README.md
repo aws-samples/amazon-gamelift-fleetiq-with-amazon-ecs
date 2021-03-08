@@ -77,12 +77,12 @@ The project contains:
     * Run the `BackendServices/deploy.sh` script to deploy the backend Services.
     * You should see the Scaler function starting quickly after the Stack is deployed to run every minute. It will populate the ECS Instances with as many ECS Tasks as possible, each hosting a single game server container that registers to FleetIQ
 7. **Set the API endpoint to the Unity Project**
-    * Set the value of `static string apiEndpoint` to the endpoint created by the backend deployment in `UnityProject/Assets/Scripts/Client/MatchmakingClient.cs`
+    * Set the value of `static string apiEndpoint` in `UnityProject/Assets/Scripts/Client/MatchmakingClient.cs` to the endpoint created by the backend deployment 
     * You can find this endpoint from the `fleetiq-ecs-game-servers-backend` Stack Outputs in CloudFormation or from the API Gateway console (make sure to have the `/Prod/` in the url)
 8. **Deploy Cognito Resources**
-    * Run `CloudFormationResources/deploy-cognito-resources.sh` to deploy
+    * Run `CloudFormationResources/deploy-cognito-resources.sh` to deploy the Amazon Cognito resources
 9. **Set the Cognito Identity Pool configuration**
-    * Set the value of `static string identityPoolID` to the identity pool created by the Cognito Resources deployment in `UnityProject/Assets/Scripts/Client/MatchmakingClient.cs`. (You can find the ARN of the Identity Pool in the CloudFormation stack `fleetiq-ecs-game-servers-cognito`, in IAM console or as output of Step 8)
+    * Set the value of `static string identityPoolID` in `UnityProject/Assets/Scripts/Client/MatchmakingClient.cs` to the identity pool created by the Cognito Resources deployment. You can find the ARN of the Identity Pool in the CloudFormation stack `fleetiq-ecs-game-servers-cognito`, in IAM console or as output of Step 8.
     * Set the value of `public static string regionString` and `public static Amazon.RegionEndpoint region` to the values of your selected region
 10. **Build and run two clients**
     * Set the the Scripting Define Symbol `CLIENT` in the *Player Settings* in the Unity Project (File -> "Build Settings" -> "Player settings" → "Player" → "Other Settings" → "Scripting Define Symbol" → Replace completely with "CLIENT")
@@ -118,7 +118,7 @@ The AWS Infrastructure for the solution consists of
 
 ### Game Server Group
 
-The Amazon FleetIQ Game Server Group is created using a Launch Template. The Launch Template uses the ECS AMI and User Data to register the instances to the ECS Cluster. This way the instances are available for Tasks once they are online. The Game Server Group is scaled based on the availability of game servers using Target Tracking. The default value is 75% utilized game servers as a target. Once new EC2 instances are launched, they will be populated by game server Tasks by the scaler Lambda function.
+The Amazon GameLift FleetIQ Game Server Group is created using a Launch Template. The Launch Template uses the ECS AMI and User Data to register the instances to the ECS Cluster. This way the instances are available for Tasks once they are online. The Game Server Group is scaled based on the availability of game servers using Target Tracking. The default value is 75% utilized game servers as a target. Once new EC2 instances are launched, they will be populated by game server Tasks by the scaler Lambda function.
 
 See `CloudFormationResources/ecs-resources.yaml` to modify the minimum (default 2) and maximum (default 3) of instances in the Auto Scaling Group as well as the Target Tracking (default 75% utilized) and Instance type configuration (default c5.xlarge and m5.xlarge). We use "SPOT_PREFERRED" to prefer Spot instances and fail over to On-Demand Instances in case Spot Isntances are not viable for hosting game sessions.
 
