@@ -214,7 +214,7 @@ Resources:
             }]
         }
       ManagedPolicyArns:
-        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore
         - !Sub arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy
       Policies:
         - PolicyName: ecs-service
@@ -263,6 +263,9 @@ Resources:
           "Fn::Base64": !Sub |
             #!/bin/bash
             echo ECS_CLUSTER=${ECSCluster} >> /etc/ecs/ecs.config
+            sudo yum update -y
+            sudo yum install -y https://s3.${AWS::Region}.amazonaws.com/amazon-ssm-${AWS::Region}/latest/linux_amd64/amazon-ssm-agent.rpm
+
       LaunchTemplateName: GameServerGroupLaunchTemplate
   # Game Server Group
   GameServerGroupRole:
