@@ -4,7 +4,7 @@ This repository contains an example solution on how to scale a fleet of game ser
 
 Check out the [Amazon GameLift FleetIQ documentation](https://docs.aws.amazon.com/gamelift/latest/fleetiqguide/gsg-intro.html) for more details on the service.
 
-**NOTE:** This repository exists for **example purposes only** and you always need to build and validate your own solution for production use. Deploying the solution **will generate costs** beyond the AWS Free Tier.
+**Note**: _“The sample code; software libraries; command line tools; proofs of concept; templates; or other related technology (including any of the foregoing that are provided by our personnel) is provided to you as AWS Content under the AWS Customer Agreement, or the relevant written agreement between you and AWS (whichever applies). You should not use this AWS Content in your production accounts, or on production or other critical data. You are responsible for testing, securing, and optimizing the AWS Content, such as sample code, as appropriate for production grade use based on your specific quality control practices and standards. Deploying AWS Content may incur AWS charges for creating or using AWS chargeable resources, such as running Amazon EC2 instances or using Amazon S3 storage.”_
 
 # Key Features
 * GameLift FleetIQ used to provision a Game Server Group. EC2 instances in the group will register to an ECS Cluster as workers
