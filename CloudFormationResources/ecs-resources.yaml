@@ -4,11 +4,11 @@ Description: A stack for deploying base resources for the ECS cluster and FleetI
 Parameters:
   GameServerPortStart: 
       Type: Number
-      Default: 32768
+      Default: 49151
       Description: The inbound port range start for the ECS task game servers
   GameServerPortEnd: 
       Type: Number
-      Default: 65535
+      Default: 49170
       Description: The inbound port range end for the ECS task game servers
   ECSAMI:
     Description: ECS-Optimized AMI ID
@@ -34,9 +34,9 @@ Mappings:
     VPC:
       CIDR: '10.0.0.0/16'
     PublicOne: #8K IPs (used by game servers)
-      CIDR: '10.0.0.0/19'
+      CIDR: '10.0.0.0/24'
     PublicTwo: #8K IPs (used by game servers)
-      CIDR: '10.0.32.0/19'
+      CIDR: '10.0.32.0/24'
 Resources:
   # VPC in which containers will be networked.
   # It has two public subnets
