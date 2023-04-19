@@ -4,11 +4,11 @@ Description: A stack for deploying base resources for the ECS cluster and FleetI
 Parameters:
   GameServerPortStart: 
       Type: Number
-      Default: 49151
+      Default: 32768
       Description: The inbound port range start for the ECS task game servers
   GameServerPortEnd: 
       Type: Number
-      Default: 49170
+      Default: 65535
       Description: The inbound port range end for the ECS task game servers
   ECSAMI:
     Description: ECS-Optimized AMI ID
